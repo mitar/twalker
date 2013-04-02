@@ -10,73 +10,91 @@ twit = new twitter
   access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY
   access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
 
-getFollowersLimiter = new limiter.RateLimiter 15, 15 * 60 * 1000 # 15 requests per 15 minutes, in ms
+class TwitterRequest
+  constructor: (@href, @name, @rateLimit, @toParams, @toResult) ->
+    @limiter = new limiter.RateLimiter @rateLimit, 15 * 60 * 1000 # limit of requests per 15 minutes, in ms
 
-getFollowersQueue = []
+    @queue = []
 
-getFollowersQueueSize = _.throttle ->
-  console.warn "getFollowers queue size is %s elements", getFollowersQueue.length
-, 60 * 1000 # Warn only once per 60 s
+    # This two methods have to be defined in the constructor so that they can access this
 
-processFollowersQueue = ->
-  f = getFollowersQueue.pop()
-  if !f
-    return
+    @queueSize = _.throttle =>
+        console.warn "#{ @name } queue size is #{ @queue.length } elements"
+      , 60 * 1000 # Warn only once per 60 s
 
-  getFollowersQueueSize()
+    @purgeWarning = _.throttle (requests) =>
+        console.warn "#{ @name } rate limit hit, purging #{ requests } requests, #{ @queue.length } in the queue"
+      , 10 * 1000 # Warn only once per 10 s
 
-  getFollowersLimiter.removeTokens 1, (err, remainingRequests) ->
-    f()
+  processQueue: =>
+    f = @queue.pop()
+    if !f
+      return
 
-    getFollowersQueueSize()
+    @queueSize()
 
-getFollowers = (user_id, cb) ->
-  page = (cursor, cb) ->
-    params =
-      user_id: user_id
-      stringify_ids: true
-      cursor: cursor
+    @limiter.removeTokens 1, (err, remainingRequests) =>
+      f()
 
-    console.log params
-    twit.get '/followers/ids.json', params, (err, data) ->
-      if err
-        cb err
-        return
+      @queueSize()
 
-      if data.next_cursor_str == '0'
-        cb null, data.ids
-        return
+  get: (args..., cb) =>
+    page = (cursor, cb) =>
+      params = @toParams args...
+      params.cursor = cursor
 
-      getFollowersQueue.push ->
-        page data.next_cursor_str, (err, nextIds) ->
-          if err
-            cb err
-            return
+      console.log params
+      twit.get @href, params, (err, data) =>
+        if err
+          err.name = @name
+          cb err
+          return
 
-          data.ids.push nextIds...
-          cb null, data.ids
+        result = @toResult data
 
-      processFollowersQueue()
+        if !data.next_cursor_str or data.next_cursor_str == '0'
+          cb null, result
+          return
 
-  page -1, cb
+        @queue.push =>
+          page data.next_cursor_str, (err, nextResult) =>
+            if err
+              cb err
+              return
 
-exports.getFollowers = (user_id, cb) ->
-  f = ->
-    getFollowers user_id, (err, ids) ->
-      if err && err.statusCode == 429
-        # We have to purge requests, we hit rate limit
-        # We purge half each time (to allow faster recovery)
-        requests = parseInt(getFollowersLimiter.tokenBucket.content / 2) || 1
-        getFollowersLimiter.removeTokens requests, (err, remainingRequests) ->
-          # We retry
-          getFollowersQueue.unshift f
-          processFollowersQueue()
+            result.push nextResult...
+            cb null, result
 
-        return
+        @processQueue()
 
-      processFollowersQueue()
+    page -1, cb
 
-      cb err, ids
+  fun: (args..., cb) =>
+    f = =>
+      @get args..., (err, ids) =>
+        if err && err.statusCode == 429
+          # We have to purge requests, we hit rate limit
+          # We purge half each time (to allow faster recovery)
+          requests = parseInt(@limiter.tokenBucket.content / 2) || 1
+          @purgeWarning requests
+          @limiter.removeTokens requests, (err, remainingRequests) =>
+            # We retry
+            @queue.push f
+            @processQueue()
 
-  getFollowersQueue.unshift f
-  processFollowersQueue()
+          return
+
+        @processQueue()
+
+        cb err, ids
+
+    @queue.unshift f
+    @processQueue()
+
+getFollowers = new TwitterRequest '/followers/ids.json', 'getFollowers', 15, (user_id) ->
+  user_id: user_id
+  stringify_ids: true
+, (data) ->
+  data.ids
+
+exports.getFollowers = getFollowers.fun
