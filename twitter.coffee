@@ -98,3 +98,19 @@ getFollowers = new TwitterRequest '/followers/ids.json', 'getFollowers', 15, (us
   data.ids
 
 exports.getFollowers = getFollowers.fun
+
+getFriends = new TwitterRequest '/friends/ids.json', 'getFriends', 15, (user_id) ->
+  user_id: user_id
+  stringify_ids: true
+, (data) ->
+  data.ids
+
+exports.getFriends = getFriends.fun
+
+getUsers = new TwitterRequest '/users/lookup.json', 'getUsers', 180, (user_ids...) ->
+  user_id: user_ids.join ','
+  include_entities: true
+, (data) ->
+  data
+
+exports.getUsers = getUsers.fun
