@@ -1,0 +1,15 @@
+{
+    "name": "twalker",
+    "version": "0.0.1",
+    "dependencies": {
+        "mongoose": "3.4.x",
+        "ntwitter": "0.5.x",
+        "async": "0.1.x",
+        "underscore": "1.4.x",
+        "limiter": "1.0.x"
+    },
+    "engines": {
+        "node": "0.8.x",
+        "npm": "1.1.x"
+    }
+}
