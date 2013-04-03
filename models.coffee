@@ -19,13 +19,16 @@ userSchema = mongoose.Schema
     required: true
   data:
     type: mongoose.Schema.Types.Mixed
+    index: true
     required: false
   followers: [
     type: String
+    index: true
     required: false
   ]
   friends: [
     type: String
+    index: true
     required: false
   ]
   in_network:
