@@ -18,7 +18,6 @@ markInNetwork = (cb) ->
       return
 
     count = 0
-    users = _.shuffle users
 
     async.forEach users, (user, cb) ->
       in_network = user.data.time_zone == 'Ljubljana' or location.REGEX.test(user.data.location) or false
@@ -48,6 +47,7 @@ findFriends = (cb) ->
 
     count = 0
     users = _.shuffle users
+    users = users[0...100]
 
     async.forEachSeries users, (user, cb) ->
       twitter.getFriends user.twitter_id, (err, friends) ->
@@ -104,6 +104,7 @@ findFollowers = (cb) ->
 
     count = 0
     users = _.shuffle users
+    users = users[0...100]
 
     async.forEachSeries users, (user, cb) ->
       twitter.getFollowers user.twitter_id, (err, followers) ->
@@ -157,6 +158,7 @@ populateUsers = (cb) ->
       return
 
     users = _.shuffle users
+    users = users[0...100]
     user_ids = (user.twitter_id for user in users)
 
     user_ids_grouped = []
