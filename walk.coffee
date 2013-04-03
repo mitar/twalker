@@ -206,34 +206,33 @@ populateUsers = (cb) ->
       cb null, count
 
 models.once 'ready', ->
-  markInNetworkCount = 1
-  populateUsersCount = 1
-  findFriendsCount = 1
-  findFollowersCount = -1
-
   doMarkInNetwork = ->
     markInNetwork (err, count) ->
-      markInNetworkCount = count
-      if markInNetworkCount + populateUsersCount + findFriendsCount + findFollowersCount > 0
-        _.delay doMarkInNetwork, 5000
+      if count > 0
+        doMarkInNetwork()
+      else
+        _.delay doMarkInNetwork, 10000
 
   doPopulateUsers = ->
     populateUsers (err, count) ->
-      populateUsersCount = count
-      if markInNetworkCount + populateUsersCount + findFriendsCount + findFollowersCount > 0
-        _.delay doPopulateUsers, 5000
+      if count > 0
+        doPopulateUsers()
+      else
+        _.delay doPopulateUsers, 10000
 
   doFindFriends = ->
     findFriends (err, count) ->
-      findFriendsCount = count
-      if markInNetworkCount + populateUsersCount + findFriendsCount + findFollowersCount > 0
-        _.delay doFindFriends, 5000
+      if count > 0
+        doFindFriends()
+      else
+        _.delay doFindFriends, 10000
 
   doFindFollowers = ->
     findFollowers (err, count) ->
-      findFollowersCount = count
-      if markInNetworkCount + populateUsersCount + findFriendsCount + findFollowersCount > 0
-        _.delay doFindFollowers, 5000
+      if count > 0
+        doFindFollowers()
+      else
+        _.delay doFindFollowers, 10000
 
   doMarkInNetwork()
   doPopulateUsers()
