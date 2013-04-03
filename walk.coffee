@@ -9,6 +9,7 @@ twitter = require './twitter'
 markInNetwork = (cb) ->
   models.User.find
     in_network: null
+    deleted: {$ne: true}
     data: {$ne: null}
   , (err, users) ->
     if (err)
@@ -36,6 +37,7 @@ findFriends = (cb) ->
   models.User.find
     friends: null
     in_network: true
+    deleted: {$ne: true}
   , (err, users) ->
     if (err)
       console.error "findFriends 1 error: #{ err }"
@@ -82,6 +84,7 @@ findFollowers = (cb) ->
   models.User.find
     followers: null
     in_network: true
+    deleted: {$ne: true}
   , (err, users) ->
     if (err)
       console.error "findFollowers 1 error: #{ err }"
@@ -127,6 +130,7 @@ findFollowers = (cb) ->
 populateUsers = (cb) ->
   models.User.find
     data: null
+    deleted: {$ne: true}
   , (err, users) ->
     if (err)
       console.error "populateUsers 1 error: #{ err }"
@@ -146,6 +150,15 @@ populateUsers = (cb) ->
       twitter.getUsers user_ids_100, (err, users) ->
         if err
           console.error "populateUsers 2 error: #{ user_ids_100 }: #{ err }"
+          if err.statusCode == 404
+            models.User.update
+              twitter_id: {$in: user_ids_100}
+            ,
+              $set: {deleted: true}
+            ,
+              multi: true
+            , (err, numberAffected, rawResponse) ->
+              console.error "populateUsers 3 error: #{ user_ids_100 }: #{ err }" if err
           cb null
           return
 
@@ -159,7 +172,7 @@ populateUsers = (cb) ->
             new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
           , (err) ->
             if err
-              console.error "populateUsers 3 error: #{ user.id_str }: #{ err }"
+              console.error "populateUsers 4 error: #{ user.id_str }: #{ err }"
             else
               count++
             cb null

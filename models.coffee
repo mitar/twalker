@@ -33,6 +33,11 @@ userSchema = mongoose.Schema
     index: true
     required: false
     default: null
+  deleted:
+    type: Boolean
+    index: true
+    required: false
+    default: false
 
 User = db.model 'User', userSchema
 
