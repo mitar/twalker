@@ -40,10 +40,11 @@ class TwitterRequest
 
   get: (args..., cb) =>
     page = (cursor, cb) =>
+      console.log "Starting #{ @name}: #{ args }, #{ cursor }"
+
       params = @toParams args...
       params.cursor = cursor
 
-      console.log params
       twit.get @href, params, (err, data) =>
         if err
           err.name = @name
@@ -53,6 +54,8 @@ class TwitterRequest
         result = @toResult data
 
         if !data.next_cursor_str or data.next_cursor_str == '0'
+          console.log "Finisehd #{ @name }: #{ args }"
+
           cb null, result
           return
 
@@ -63,6 +66,9 @@ class TwitterRequest
               return
 
             result.push nextResult...
+
+            console.log "Finisehd #{ @name }: #{ args }"
+
             cb null, result
 
         @processQueue()
