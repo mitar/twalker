@@ -38,6 +38,7 @@ findFriends = (cb) ->
     friends: null
     in_network: true
     deleted: {$ne: true}
+    private: {$ne: true}
   , (err, users) ->
     if (err)
       console.error "findFriends 1 error: #{ err }"
@@ -50,6 +51,13 @@ findFriends = (cb) ->
       twitter.getFriends user.twitter_id, (err, friends) ->
         if err
           console.error "findFriends 2 error: #{ user.twitter_id }: #{ err }"
+          if err.statusCode == 401
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {private: true}
+            , (err, numberAffected, rawResponse) ->
+              console.error "findFriends 3 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
 
@@ -62,7 +70,7 @@ findFriends = (cb) ->
             upsert: true
             new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
           , (err) ->
-            console.error "findFriends 3 error: #{ friend }: #{ err }" if err
+            console.error "findFriends 4 error: #{ friend }: #{ err }" if err
             cb null
 
         , (err) ->
@@ -72,7 +80,7 @@ findFriends = (cb) ->
             friends: friends
           , (err) ->
             if err
-              console.error "findFriends 4 error: #{ user.twitter_id }: #{ err }"
+              console.error "findFriends 5 error: #{ user.twitter_id }: #{ err }"
             else
               count++
             cb null
@@ -85,6 +93,7 @@ findFollowers = (cb) ->
     followers: null
     in_network: true
     deleted: {$ne: true}
+    private: {$ne: true}
   , (err, users) ->
     if (err)
       console.error "findFollowers 1 error: #{ err }"
@@ -97,6 +106,13 @@ findFollowers = (cb) ->
       twitter.getFollowers user.twitter_id, (err, followers) ->
         if err
           console.error "findFollowers 2 error: #{ user.twitter_id }: #{ err }"
+          if err.statusCode == 401
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {private: true}
+            , (err, numberAffected, rawResponse) ->
+              console.error "findFollowers 3 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
 
@@ -109,7 +125,7 @@ findFollowers = (cb) ->
             upsert: true
             new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
           , (err) ->
-            console.error "findFollowers 3 error: #{ follower }: #{ err }" if err
+            console.error "findFollowers 4 error: #{ follower }: #{ err }" if err
             cb null
 
         , (err) ->
@@ -119,7 +135,7 @@ findFollowers = (cb) ->
             followers: followers
           , (err) ->
             if err
-              console.error "findFollowers 4 error: #{ user.twitter_id }: #{ err }"
+              console.error "findFollowers 5 error: #{ user.twitter_id }: #{ err }"
             else
               count++
             cb null

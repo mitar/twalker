@@ -38,6 +38,11 @@ userSchema = mongoose.Schema
     index: true
     required: false
     default: false
+  private:
+    type: Boolean
+    index: true
+    required: false
+    default: false
 
 User = db.model 'User', userSchema
 
