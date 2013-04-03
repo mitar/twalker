@@ -10,7 +10,7 @@ markInNetwork = (cb) ->
   models.User.find
     in_network: null
     deleted: {$ne: true}
-    data: {$ne: null}
+    has_data: true
   , (err, users) ->
     if (err)
       console.error "markInNetwork 1 error: #{ err }"
@@ -35,7 +35,7 @@ markInNetwork = (cb) ->
 
 findFriends = (cb) ->
   models.User.find
-    friends: null
+    has_friends: {$ne: true}
     in_network: true
     deleted: {$ne: true}
     private: {$ne: true}
@@ -80,6 +80,7 @@ findFriends = (cb) ->
             twitter_id: user.twitter_id
           ,
             friends: friends
+            has_friends: true
           , (err) ->
             if err
               console.error "findFriends 5 error: #{ user.twitter_id }: #{ err }"
@@ -92,7 +93,7 @@ findFriends = (cb) ->
 
 findFollowers = (cb) ->
   models.User.find
-    followers: null
+    has_followers: {$ne: true}
     in_network: true
     deleted: {$ne: true}
     private: {$ne: true}
@@ -137,6 +138,7 @@ findFollowers = (cb) ->
             twitter_id: user.twitter_id
           ,
             followers: followers
+            has_followers: true
           , (err) ->
             if err
               console.error "findFollowers 5 error: #{ user.twitter_id }: #{ err }"
@@ -149,7 +151,7 @@ findFollowers = (cb) ->
 
 populateUsers = (cb) ->
   models.User.find
-    data: null
+    has_data: {$ne: true}
     deleted: {$ne: true}
   , (err, users) ->
     if (err)
@@ -189,6 +191,7 @@ populateUsers = (cb) ->
             twitter_id: user.id_str
           ,
             data: user
+            has_data: true
           ,
             upsert: true
             new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
