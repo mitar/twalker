@@ -49,7 +49,7 @@ findFriends = (cb) ->
     count = 0
     users = _.shuffle users
 
-    async.forEach users, (user, cb) ->
+    async.forEachSeries users, (user, cb) ->
       twitter.getFriends user.twitter_id, (err, friends) ->
         if err
           console.error "findFriends 2 error: #{ user.twitter_id }: #{ err }"
@@ -105,7 +105,7 @@ findFollowers = (cb) ->
     count = 0
     users = _.shuffle users
 
-    async.forEach users, (user, cb) ->
+    async.forEachSeries users, (user, cb) ->
       twitter.getFollowers user.twitter_id, (err, followers) ->
         if err
           console.error "findFollowers 2 error: #{ user.twitter_id }: #{ err }"
@@ -166,7 +166,7 @@ populateUsers = (cb) ->
 
     count = 0
 
-    async.forEach user_ids_grouped, (user_ids_100, cb) ->
+    async.forEachSeries user_ids_grouped, (user_ids_100, cb) ->
       twitter.getUsers user_ids_100, (err, users) ->
         if err
           console.error "populateUsers 2 error: #{ user_ids_100 }: #{ err }"
