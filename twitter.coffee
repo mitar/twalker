@@ -12,7 +12,7 @@ twit = new twitter
 
 class TwitterRequest
   constructor: (@href, @name, @rateLimit, @toParams, @toResult) ->
-    @limiter = new limiter.RateLimiter @rateLimit, 15 * 60 * 1000 # limit of requests per 15 minutes, in ms
+    @limiter = new limiter.RateLimiter @rateLimit, 16 * 60 * 1000 # limit of requests per 15 minutes, in ms, but we are using 16 to make sure
 
     @queue = []
 
