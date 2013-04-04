@@ -7,35 +7,30 @@ models = require './models'
 twitter = require './twitter'
 
 markInNetwork = (cb) ->
-  models.User.find
+  count = 0
+
+  models.User.find(
     in_network: null
     deleted: {$ne: true}
     has_data: true
-  ,
-    null
-  ,
-    limit: 10000
-  , (err, users) ->
-    if (err)
-      console.error "markInNetwork 1 error: #{ err }"
-      cb null, 0
-      return
-
-    count = 0
-
-    async.forEach users, (user, cb) ->
-      in_network = user.data.time_zone == 'Ljubljana' or location.REGEX.test(user.data.location) or false
-      models.User.findOneAndUpdate
-        twitter_id: user.twitter_id
-      ,
-        in_network: in_network
-      , (err) ->
-        console.error "markInNetwork 2 error: #{ user.twitter_id }: #{ err }" if err
-        count++ if in_network
-        cb null
-
+  ).stream().on('error', (err) ->
+    console.error "markInNetwork 1 error: #{ err }"
+    cb null, 0
+    return
+  ).on('data', (user) ->
+    in_network = user.data.time_zone == 'Ljubljana' or location.REGEX.test(user.data.location) or false
+    models.User.findOneAndUpdate
+      twitter_id: user.twitter_id
+    ,
+      in_network: in_network
     , (err) ->
-      cb null, count
+      if err
+        console.error "markInNetwork 2 error: #{ user.twitter_id }: #{ err }"
+      else
+        count++ if in_network
+  ).on('close', ->
+    cb null, count
+  )
 
 findFriends = (cb) ->
   models.User.find
@@ -46,7 +41,7 @@ findFriends = (cb) ->
   ,
     null
   ,
-    limit: 10000
+    limit: 1000
   , (err, users) ->
     if (err)
       console.error "findFriends 1 error: #{ err }"
@@ -108,7 +103,7 @@ findFollowers = (cb) ->
   ,
     null
   ,
-    limit: 10000
+    limit: 1000
   , (err, users) ->
     if (err)
       console.error "findFollowers 1 error: #{ err }"
@@ -168,7 +163,7 @@ populateUsers = (cb) ->
   ,
     null
   ,
-    limit: 10000
+    limit: 1000
   , (err, users) ->
     if (err)
       console.error "populateUsers 1 error: #{ err }"
