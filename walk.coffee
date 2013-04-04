@@ -11,6 +11,10 @@ markInNetwork = (cb) ->
     in_network: null
     deleted: {$ne: true}
     has_data: true
+  ,
+    null
+  ,
+    limit: 10000
   , (err, users) ->
     if (err)
       console.error "markInNetwork 1 error: #{ err }"
@@ -39,6 +43,10 @@ findFriends = (cb) ->
     in_network: true
     deleted: {$ne: true}
     private: {$ne: true}
+  ,
+    null
+  ,
+    limit: 10000
   , (err, users) ->
     if (err)
       console.error "findFriends 1 error: #{ err }"
@@ -97,6 +105,10 @@ findFollowers = (cb) ->
     in_network: true
     deleted: {$ne: true}
     private: {$ne: true}
+  ,
+    null
+  ,
+    limit: 10000
   , (err, users) ->
     if (err)
       console.error "findFollowers 1 error: #{ err }"
@@ -153,6 +165,10 @@ populateUsers = (cb) ->
   models.User.find
     has_data: {$ne: true}
     deleted: {$ne: true}
+  ,
+    null
+  ,
+    limit: 10000
   , (err, users) ->
     if (err)
       console.error "populateUsers 1 error: #{ err }"
