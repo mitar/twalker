@@ -65,7 +65,7 @@ class TwitterRequest
               cb err
               return
 
-            result.push nextResult...
+            result = result.concat nextResult
 
             console.log "Finisehd #{ @name }: #{ args }"
 
