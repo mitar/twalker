@@ -13,7 +13,7 @@ markInNetwork = (cb) ->
     in_network: null
     deleted: {$ne: true}
     has_data: true
-  ).stream().on('error', (err) ->
+  ).batchSize(10).stream().on('error', (err) ->
     console.error "markInNetwork 1 error: #{ err }"
     cb null, 0
     return
@@ -42,6 +42,7 @@ findFriends = (cb) ->
     null
   ,
     limit: 1000
+    batchSize: 100
   , (err, users) ->
     if (err)
       console.error "findFriends 1 error: #{ err }"
@@ -104,6 +105,7 @@ findFollowers = (cb) ->
     null
   ,
     limit: 1000
+    batchSize: 100
   , (err, users) ->
     if (err)
       console.error "findFollowers 1 error: #{ err }"
@@ -164,6 +166,7 @@ populateUsers = (cb) ->
     null
   ,
     limit: 1000
+    batchSize: 100
   , (err, users) ->
     if (err)
       console.error "populateUsers 1 error: #{ err }"
