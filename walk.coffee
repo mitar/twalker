@@ -1,4 +1,5 @@
 async = require 'async'
+assert = require 'assert'
 
 _ = require 'underscore'
 
@@ -63,6 +64,7 @@ findFriends = (cb) ->
             ,
               $set: {private: true}
             , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected 1
               console.error "findFriends 3 error: #{ user.twitter_id }: #{ err }" if err
           else if err.statusCode == 404
             models.User.update
@@ -70,6 +72,7 @@ findFriends = (cb) ->
             ,
               $set: {deleted: true}
             , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected 1
               console.error "findFriends 4 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
@@ -133,6 +136,7 @@ findFollowers = (cb) ->
             ,
               $set: {private: true}
             , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected 1
               console.error "findFollowers 3 error: #{ user.twitter_id }: #{ err }" if err
           else if err.statusCode == 404
             models.User.update
@@ -140,6 +144,7 @@ findFollowers = (cb) ->
             ,
               $set: {deleted: true}
             , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected 1
               console.error "findFollowers 4 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
@@ -210,6 +215,7 @@ populateUsers = (cb) ->
             ,
               multi: true
             , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected user_ids_100.length
               console.error "populateUsers 3 error: #{ user_ids_100 }: #{ err }" if err
           cb null
           return
