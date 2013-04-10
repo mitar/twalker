@@ -5659,7 +5659,6 @@ LOCATIONS = [
   'tosko celo'
   'tovsto'
   'toško čelo'
-  'trata'
   'trata pri velesovem'
   'trate'
   'tratna ob voglajni'
