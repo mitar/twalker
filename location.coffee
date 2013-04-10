@@ -1598,7 +1598,6 @@ LOCATIONS = [
   'grajenscak'
   'grajenščak'
   'grajska vas'
-  'grant'
   'graska gora'
   'gračič'
   'gračišče'
