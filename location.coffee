@@ -3956,7 +3956,6 @@ LOCATIONS = [
   'polhov gradec'
   'polhovica'
   'polica'
-  'police'
   'policka vas'
   'policki vrh'
   'polička vas'
@@ -7077,5 +7076,7 @@ LOCATIONS = [
   'slovenija'
   'slovenia'
 ]
+
+LOCATIONS = (location.replace('.', '\\.') for location in LOCATIONS)
 
 exports.REGEX = new RegExp '\\b' + LOCATIONS.join('\\b|\\b') + '\\b', 'i'
