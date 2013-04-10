@@ -64,7 +64,7 @@ findFriends = (cb) ->
             ,
               $set: {private: true}
             , (err, numberAffected, rawResponse) ->
-              assert.equal numberAffected 1
+              assert.equal numberAffected, 1
               console.error "findFriends 3 error: #{ user.twitter_id }: #{ err }" if err
           else if err.statusCode == 404
             models.User.update
@@ -72,20 +72,20 @@ findFriends = (cb) ->
             ,
               $set: {deleted: true}
             , (err, numberAffected, rawResponse) ->
-              assert.equal numberAffected 1
+              assert.equal numberAffected, 1
               console.error "findFriends 4 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
 
         async.forEach friends, (friend, cb) ->
-          models.User.findOneAndUpdate
+          models.User.update
             twitter_id: friend
           ,
-            twitter_id: friend
+            $set: {twitter_id: friend}
           ,
             upsert: true
-            new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
-          , (err) ->
+          , (err, numberAffected, rawResponse) ->
+            assert.equal numberAffected, 1
             console.error "findFriends 5 error: #{ friend }: #{ err }" if err
             cb null
 
@@ -136,7 +136,7 @@ findFollowers = (cb) ->
             ,
               $set: {private: true}
             , (err, numberAffected, rawResponse) ->
-              assert.equal numberAffected 1
+              assert.equal numberAffected, 1
               console.error "findFollowers 3 error: #{ user.twitter_id }: #{ err }" if err
           else if err.statusCode == 404
             models.User.update
@@ -144,20 +144,20 @@ findFollowers = (cb) ->
             ,
               $set: {deleted: true}
             , (err, numberAffected, rawResponse) ->
-              assert.equal numberAffected 1
+              assert.equal numberAffected, 1
               console.error "findFollowers 4 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
 
         async.forEach followers, (follower, cb) ->
-          models.User.findOneAndUpdate
+          models.User.update
             twitter_id: follower
           ,
-            twitter_id: follower
+            $set: {twitter_id: follower}
           ,
             upsert: true
-            new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
-          , (err) ->
+          , (err, numberAffected, rawResponse) ->
+            assert.equal numberAffected, 1
             console.error "findFollowers 5 error: #{ follower }: #{ err }" if err
             cb null
 
@@ -215,7 +215,7 @@ populateUsers = (cb) ->
             ,
               multi: true
             , (err, numberAffected, rawResponse) ->
-              assert.equal numberAffected user_ids_100.length
+              assert.equal numberAffected, user_ids_100.length
               console.error "populateUsers 3 error: #{ user_ids_100 }: #{ err }" if err
           cb null
           return
