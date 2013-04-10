@@ -64,6 +64,13 @@ findFriends = (cb) ->
               $set: {private: true}
             , (err, numberAffected, rawResponse) ->
               console.error "findFriends 3 error: #{ user.twitter_id }: #{ err }" if err
+          else if err.statusCode == 404
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {deleted: true}
+            , (err, numberAffected, rawResponse) ->
+              console.error "findFriends 4 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
 
@@ -76,7 +83,7 @@ findFriends = (cb) ->
             upsert: true
             new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
           , (err) ->
-            console.error "findFriends 4 error: #{ friend }: #{ err }" if err
+            console.error "findFriends 5 error: #{ friend }: #{ err }" if err
             cb null
 
         , (err) ->
@@ -87,7 +94,7 @@ findFriends = (cb) ->
             has_friends: true
           , (err) ->
             if err
-              console.error "findFriends 5 error: #{ user.twitter_id }: #{ err }"
+              console.error "findFriends 6 error: #{ user.twitter_id }: #{ err }"
             else
               count++
             cb null
@@ -127,6 +134,13 @@ findFollowers = (cb) ->
               $set: {private: true}
             , (err, numberAffected, rawResponse) ->
               console.error "findFollowers 3 error: #{ user.twitter_id }: #{ err }" if err
+          else if err.statusCode == 404
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {deleted: true}
+            , (err, numberAffected, rawResponse) ->
+              console.error "findFollowers 4 error: #{ user.twitter_id }: #{ err }" if err
           cb null
           return
 
@@ -139,7 +153,7 @@ findFollowers = (cb) ->
             upsert: true
             new: false # We set "new" to false because of this bug: https://github.com/mongodb/node-mongodb-native/issues/699
           , (err) ->
-            console.error "findFollowers 4 error: #{ follower }: #{ err }" if err
+            console.error "findFollowers 5 error: #{ follower }: #{ err }" if err
             cb null
 
         , (err) ->
@@ -150,7 +164,7 @@ findFollowers = (cb) ->
             has_followers: true
           , (err) ->
             if err
-              console.error "findFollowers 5 error: #{ user.twitter_id }: #{ err }"
+              console.error "findFollowers 6 error: #{ user.twitter_id }: #{ err }"
             else
               count++
             cb null
