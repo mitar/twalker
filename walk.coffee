@@ -34,7 +34,7 @@ markInNetwork = (cb) ->
   )
 
 addFollowersAndFriends = (cb) ->
-  count = 0
+  ids = []
 
   console.log "Processing followers"
   models.User.find(
@@ -44,47 +44,36 @@ addFollowersAndFriends = (cb) ->
     cb null, count
     return
   ).on('data', (user) ->
-    async.forEach user.followers, (follower, cb) ->
-      console.log follower
-      models.User.update
-        twitter_id: follower
-      ,
-        $set: {twitter_id: follower}
-      ,
-        upsert: true
-      , (err, numberAffected, rawResponse) ->
-        if err
-          console.error "addFollowersAndFriends 2 error: #{ follower }: #{ err }"
-        else
-          assert.equal numberAffected, 1
-          count++
-        cb null
+    for follower in user.followers
+      ids.push follower
   ).on('close', ->
     console.log "Processing friends"
     models.User.find(
       has_friends: true
     ).batchSize(10).stream().on('error', (err) ->
-      console.error "addFollowersAndFriends 3 error: #{ err }"
+      console.error "addFollowersAndFriends 2 error: #{ err }"
       cb null, count
       return
     ).on('data', (user) ->
-      async.forEach user.friends, (friend, cb) ->
-        console.log friend
+      for friend in user.friends
+        ids.push friend
+    ).on('close', ->
+      console.log "Storing"
+      async.forEachSeries ids, (id, cb) ->
         models.User.update
-          twitter_id: friend
+          twitter_id: id
         ,
-          $set: {twitter_id: friend}
+          $set: {twitter_id: id}
         ,
           upsert: true
         , (err, numberAffected, rawResponse) ->
-          if err
-            console.error "addFollowersAndFriends 4 error: #{ friend }: #{ err }"
-          else
-            assert.equal numberAffected, 1
-            count++
+          assert.equal numberAffected, 1 if not err
+          console.error "addFollowersAndFriends 3 error: #{ id }: #{ err }" if err
+          console.log id
           cb null
-    ).on('close', ->
-      cb null, count
+
+      , (err) ->
+        cb null, ids.length
     )
   )
 
