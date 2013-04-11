@@ -33,6 +33,51 @@ markInNetwork = (cb) ->
     cb null, count
   )
 
+addFollowersAndFriends = (cb) ->
+  count = 0
+
+  models.User.find(
+    has_followers: true
+  ).batchSize(10).stream().on('error', (err) ->
+    console.error "addFollowersAndFriends 1 error: #{ err }"
+    cb null, 0
+    return
+  ).on('data', (user) ->
+    async.forEach user.followers, (follower, cb) ->
+      models.User.update
+        twitter_id: follower
+      ,
+        $set: {twitter_id: follower}
+      ,
+        upsert: true
+      , (err, numberAffected, rawResponse) ->
+        assert.equal numberAffected, 1 if not err
+        console.error "addFollowersAndFriends 2 error: #{ follower }: #{ err }" if err
+        cb null
+  ).on('close', ->
+    models.User.find(
+      has_friends: true
+    ).batchSize(10).stream().on('error', (err) ->
+      console.error "addFollowersAndFriends 3 error: #{ err }"
+      cb null, 0
+      return
+    ).on('data', (user) ->
+      async.forEach user.friends, (friend, cb) ->
+        models.User.update
+          twitter_id: friend
+        ,
+          $set: {twitter_id: friend}
+        ,
+          upsert: true
+        , (err, numberAffected, rawResponse) ->
+          assert.equal numberAffected, 1 if not err
+          console.error "addFollowersAndFriends 4 error: #{ friend }: #{ err }" if err
+          cb null
+    ).on('close', ->
+      cb null, count
+    )
+  )
+
 findFriends = (cb) ->
   models.User.find
     has_friends: {$ne: true}
