@@ -36,14 +36,16 @@ markInNetwork = (cb) ->
 addFollowersAndFriends = (cb) ->
   count = 0
 
+  console.log "Processing followers"
   models.User.find(
     has_followers: true
   ).batchSize(10).stream().on('error', (err) ->
     console.error "addFollowersAndFriends 1 error: #{ err }"
-    cb null, 0
+    cb null, count
     return
   ).on('data', (user) ->
     async.forEach user.followers, (follower, cb) ->
+      console.log follower
       models.User.update
         twitter_id: follower
       ,
@@ -51,18 +53,23 @@ addFollowersAndFriends = (cb) ->
       ,
         upsert: true
       , (err, numberAffected, rawResponse) ->
-        assert.equal numberAffected, 1 if not err
-        console.error "addFollowersAndFriends 2 error: #{ follower }: #{ err }" if err
+        if err
+          console.error "addFollowersAndFriends 2 error: #{ follower }: #{ err }"
+        else
+          assert.equal numberAffected, 1
+          count++
         cb null
   ).on('close', ->
+    console.log "Processing friends"
     models.User.find(
       has_friends: true
     ).batchSize(10).stream().on('error', (err) ->
       console.error "addFollowersAndFriends 3 error: #{ err }"
-      cb null, 0
+      cb null, count
       return
     ).on('data', (user) ->
       async.forEach user.friends, (friend, cb) ->
+        console.log friend
         models.User.update
           twitter_id: friend
         ,
@@ -70,8 +77,11 @@ addFollowersAndFriends = (cb) ->
         ,
           upsert: true
         , (err, numberAffected, rawResponse) ->
-          assert.equal numberAffected, 1 if not err
-          console.error "addFollowersAndFriends 4 error: #{ friend }: #{ err }" if err
+          if err
+            console.error "addFollowersAndFriends 4 error: #{ friend }: #{ err }"
+          else
+            assert.equal numberAffected, 1
+            count++
           cb null
     ).on('close', ->
       cb null, count
