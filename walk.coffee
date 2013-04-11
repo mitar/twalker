@@ -121,7 +121,7 @@ findFriends = (cb) ->
           cb null
           return
 
-        async.forEach friends, (friend, cb) ->
+        async.forEachSeries friends, (friend, cb) ->
           models.User.update
             twitter_id: friend
           ,
@@ -193,7 +193,7 @@ findFollowers = (cb) ->
           cb null
           return
 
-        async.forEach followers, (follower, cb) ->
+        async.forEachSeries followers, (follower, cb) ->
           models.User.update
             twitter_id: follower
           ,
@@ -264,7 +264,7 @@ populateUsers = (cb) ->
           cb null
           return
 
-        async.forEach users, (user, cb) ->
+        async.forEachSeries users, (user, cb) ->
           models.User.update
             twitter_id: user.id_str
           ,
