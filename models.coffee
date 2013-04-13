@@ -59,6 +59,9 @@ userSchema = mongoose.Schema
     required: false
     default: false
 
+userSchema.index 'deleted': 1, 'has_data': 1
+userSchema.index 'in_network': 1, 'deleted': 1, 'has_data': 1
+
 User = db.model 'User', userSchema
 
 # We are setting module.exports directly because we want to use our own object for exports
