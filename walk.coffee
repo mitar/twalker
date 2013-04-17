@@ -228,8 +228,7 @@ populateUsers = (cb) ->
   ,
     null
   ,
-    limit: 1000
-    batchSize: 100
+    limit: 50000
   , (err, users) ->
     if (err)
       console.error "populateUsers 1 error: #{ err }"
@@ -237,7 +236,7 @@ populateUsers = (cb) ->
       return
 
     users = _.shuffle users
-    users = users[0...100]
+    users = users[0...5000]
     user_ids = (user.twitter_id for user in users)
 
     user_ids_grouped = []
