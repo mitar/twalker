@@ -187,7 +187,7 @@ getUsers = new TwitterRequest '/users/lookup.json', 'getUsers', 180, (user_ids..
 
 exports.getUsers = getUsers.fun
 
-getTimeline = new TwitterTimelineRequest '/ustatuses/user_timeline', 'getTimeline', 180, (user_id) ->
+getTimeline = new TwitterTimelineRequest '/statuses/user_timeline.json', 'getTimeline', 180, (user_id) ->
   user_id: user_id
   contributor_details: true
   include_rts: true
