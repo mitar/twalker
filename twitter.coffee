@@ -192,5 +192,6 @@ getTimeline = new TwitterTimelineRequest '/statuses/user_timeline.json', 'getTim
   contributor_details: true
   include_rts: true
   exclude_replies: false
+  count: 200
 
 exports.getTimeline = getTimeline.fun
