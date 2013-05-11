@@ -43,6 +43,15 @@ userSchema = mongoose.Schema
     index: true
     required: false
     default: false
+  timeline: [
+    type: mongoose.Schema.Types.Mixed
+    required: false
+  ]
+  has_timeline:
+    type: Boolean
+    index: true
+    required: false
+    default: false
   in_network:
     type: Boolean
     index: true

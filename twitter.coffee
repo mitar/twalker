@@ -10,6 +10,29 @@ twit = new twitter
   access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY
   access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
 
+trimLeft = (s, c) ->
+  i = 0
+  while i < s.length - 1 && s[i] == c
+    i++;
+  s.substring(i)
+
+decreaseId = (n) ->
+  n = n.toString()
+  result = n
+  i = n.length - 1
+  while true
+    if i < 0
+      return "NaN"
+    else if n[i] == "0"
+      result = result.substring(0, i) + "9" + result.substring(i + 1)
+      i--
+    else
+      digit = parseInt(n[i], 10)
+      return "NaN" if _.isNaN digit
+      result = result.substring(0, i) + (digit - 1).toString() + result.substring(i + 1)
+      return trimLeft result, "0"
+  result
+
 class TwitterRequest
   constructor: (@href, @name, @rateLimit, @toParams, @toResult) ->
     @limiter = new limiter.RateLimiter @rateLimit, 16 * 60 * 1000 # limit of requests per 15 minutes, in ms, but we are using 16 to make sure
@@ -40,7 +63,7 @@ class TwitterRequest
 
   get: (args..., cb) =>
     page = (cursor, cb) =>
-      console.log "Starting #{ @name}: #{ args }, #{ cursor }"
+      console.log "Starting #{ @name }: #{ args }, #{ cursor }"
 
       params = @toParams args...
       params.cursor = cursor
@@ -53,7 +76,7 @@ class TwitterRequest
 
         result = @toResult data
 
-        if !data.next_cursor_str or data.next_cursor_str == '0'
+        if !data.next_cursor_str or data.next_cursor_str == '0' or result.length == 0
           console.log "Finisehd #{ @name }: #{ args }"
 
           cb null, result
@@ -97,6 +120,49 @@ class TwitterRequest
     @queue.unshift f
     @processQueue()
 
+class TwitterTimelineRequest extends TwitterRequest
+  constructor: (href, name, rateLimit, toParams) ->
+    super href, name, rateLimit, toParams, (data) ->
+      data
+
+  get: (args..., cb) =>
+    page = (max_id, cb) =>
+      console.log "Starting #{ @name }: #{ args }, #{ max_id }"
+
+      params = @toParams args...
+      params.max_id = max_id unless max_id is null
+
+      twit.get @href, params, (err, data) =>
+        if err
+          err.name = @name
+          cb err
+          return
+
+        result = @toResult data
+
+        if result.length == 0
+          console.log "Finisehd #{ @name }: #{ args }"
+
+          cb null, result
+          return
+
+        @queue.push =>
+          max_id = decreaseId result[result.length - 1].id_str
+          page max_id, (err, nextResult) =>
+            if err
+              cb err
+              return
+
+            result = result.concat nextResult
+
+            console.log "Finisehd #{ @name }: #{ args }"
+
+            cb null, result
+
+        @processQueue()
+
+    page null, cb
+
 getFollowers = new TwitterRequest '/followers/ids.json', 'getFollowers', 15, (user_id) ->
   user_id: user_id
   stringify_ids: true
@@ -120,3 +186,11 @@ getUsers = new TwitterRequest '/users/lookup.json', 'getUsers', 180, (user_ids..
   data
 
 exports.getUsers = getUsers.fun
+
+getTimeline = new TwitterTimelineRequest '/ustatuses/user_timeline', 'getTimeline', 180, (user_id) ->
+  user_id: user_id
+  contributor_details: true
+  include_rts: true
+  exclude_replies: false
+
+exports.getTimeline = getTimeline.fun

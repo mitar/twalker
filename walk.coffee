@@ -282,6 +282,65 @@ populateUsers = (cb) ->
     , (err) ->
       cb null, count
 
+getTimeline = (cb) ->
+  models.User.find
+    has_timeline: {$ne: true}
+    deleted: {$ne: true}
+    private: {$ne: true}
+    has_data: true
+  ,
+    null
+  ,
+    limit: 1000
+    batchSize: 100
+  , (err, users) ->
+    if (err)
+      console.error "getTimeline 1 error: #{ err }"
+      cb null, 0
+      return
+
+    count = 0
+    users = _.shuffle users
+    users = users[0...100]
+
+    async.forEachSeries users, (user, cb) ->
+      twitter.getTimeline user.twitter_id, (err, timeline) ->
+        if err
+          console.error "getTimeline 2 error: #{ user.twitter_id }: #{ err }"
+          if err.statusCode == 401
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {private: true}
+            , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected, 1 if not err
+              console.error "getTimeline 3 error: #{ user.twitter_id }: #{ err }" if err
+          else if err.statusCode == 404
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {deleted: true}
+            , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected, 1 if not err
+              console.error "getTimeline 4 error: #{ user.twitter_id }: #{ err }" if err
+          cb null
+          return
+
+        models.User.findOneAndUpdate
+          twitter_id: user.twitter_id
+        ,
+          timeline: timeline
+          has_timeline: true
+        , (err) ->
+          if err
+            console.error "getTimeline 5 error: #{ user.twitter_id }: #{ err }"
+          else
+            count++
+          cb null
+
+    , (err) ->
+      cb null, count
+
 models.once 'ready', ->
   doMarkInNetwork = ->
     markInNetwork (err, count) ->
@@ -311,7 +370,15 @@ models.once 'ready', ->
       else
         _.delay doFindFollowers, 10000
 
+  doGetTimeline = ->
+    getTimeline (err, count) ->
+      if count > 0
+        getTimeline()
+      else
+        _.delay getTimeline, 10000
+
   doMarkInNetwork()
   doPopulateUsers()
   doFindFriends()
   doFindFollowers()
+  doGetTimeline()
