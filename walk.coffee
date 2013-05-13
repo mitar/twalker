@@ -375,7 +375,7 @@ models.once 'ready', ->
       if count > 0
         getTimeline()
       else
-        _.delay getTimeline, 10000
+        _.delay doGetTimeline, 10000
 
   doMarkInNetwork()
   doPopulateUsers()
