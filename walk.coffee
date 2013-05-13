@@ -373,7 +373,7 @@ models.once 'ready', ->
   doGetTimeline = ->
     getTimeline (err, count) ->
       if count > 0
-        getTimeline()
+        doGetTimeline()
       else
         _.delay doGetTimeline, 10000
 
