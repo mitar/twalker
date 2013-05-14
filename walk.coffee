@@ -326,6 +326,14 @@ getTimeline = (cb) ->
           cb null
           return
 
+        timeline = _.map timeline, (value, key, list) ->
+          # retweet_count seems to be a commulative count of all retweets globally, while favorite_count just for this particular tweet
+          value = _.pick value, 'created_at', 'id_str', 'text', 'retweeted_status', 'retweet_count', 'favorite_count', 'lang', 'coordinates'
+          if value.retweeted_status
+            value.is_retweet_of = value.retweeted_status.id_str
+            delete value.retweeted_status
+          value
+
         models.User.findOneAndUpdate
           twitter_id: user.twitter_id
         ,
