@@ -285,9 +285,9 @@ populateUsers = (cb) ->
 getTimeline = (cb) ->
   models.User.find
     has_timeline: {$ne: true}
+    in_network: true
     deleted: {$ne: true}
     private: {$ne: true}
-    has_data: true
   ,
     null
   ,
