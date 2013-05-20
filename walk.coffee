@@ -282,6 +282,15 @@ populateUsers = (cb) ->
     , (err) ->
       cb null, count
 
+processTimeline = (timeline) ->
+  _.map timeline, (value, key, list) ->
+    # retweet_count seems to be a commulative count of all retweets globally, while favorite_count just for this particular tweet
+    value = _.pick value, 'created_at', 'id_str', 'text', 'retweeted_status', 'retweet_count', 'favorite_count', 'lang', 'coordinates'
+    if value.retweeted_status
+      value.is_retweet_of = value.retweeted_status.id_str
+      delete value.retweeted_status
+    value
+
 getTimeline = (cb) ->
   models.User.find
     has_timeline: {$ne: true}
@@ -326,13 +335,7 @@ getTimeline = (cb) ->
           cb null
           return
 
-        timeline = _.map timeline, (value, key, list) ->
-          # retweet_count seems to be a commulative count of all retweets globally, while favorite_count just for this particular tweet
-          value = _.pick value, 'created_at', 'id_str', 'text', 'retweeted_status', 'retweet_count', 'favorite_count', 'lang', 'coordinates'
-          if value.retweeted_status
-            value.is_retweet_of = value.retweeted_status.id_str
-            delete value.retweeted_status
-          value
+        timeline = processTimeline timeline
 
         models.User.findOneAndUpdate
           twitter_id: user.twitter_id
@@ -345,6 +348,104 @@ getTimeline = (cb) ->
           else
             count++
           cb null
+
+    , (err) ->
+      cb null, count
+
+timelineToLanguages = (timeline) ->
+  languages = {}
+  for post in timeline
+    languages[post.lang] = if languages[post.lang] then languages[post.lang] + 1 else 1
+  languages
+
+getLanguages = (cb) ->
+  models.User.find
+    has_languages: {$ne: true}
+    deleted: {$ne: true}
+    private: {$ne: true}
+    has_data: true # Artificial requirement, but just to influence the order of fetching
+  ,
+    null
+  ,
+    limit: 1000
+    batchSize: 100
+  , (err, users) ->
+    if (err)
+      console.error "getLanguages 1 error: #{ err }"
+      cb null, 0
+      return
+
+    count = 0
+    users = _.shuffle users
+    users = users[0...100]
+
+    async.forEachSeries users, (user, cb) ->
+      if user.has_timeline
+        models.User.findOneAndUpdate
+          twitter_id: user.twitter_id
+        ,
+          languages: timelineToLanguages user.timeline
+          has_languages: true
+        , (err) ->
+          if err
+            console.error "getLanguages 2 error: #{ user.twitter_id }: #{ err }"
+          else
+            count++
+          cb null
+        return
+
+      twitter.getTimeline user.twitter_id, (err, timeline) ->
+        if err
+          console.error "getLanguages 3 error: #{ user.twitter_id }: #{ err }"
+          if err.statusCode == 401
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {private: true}
+            , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected, 1 if not err
+              console.error "getLanguages 4 error: #{ user.twitter_id }: #{ err }" if err
+          else if err.statusCode == 404
+            models.User.update
+              twitter_id: user.twitter_id
+            ,
+              $set: {deleted: true}
+            , (err, numberAffected, rawResponse) ->
+              assert.equal numberAffected, 1 if not err
+              console.error "getLanguages 5 error: #{ user.twitter_id }: #{ err }" if err
+          cb null
+          return
+
+        timeline = processTimeline timeline
+        languages = timelineToLanguages timeline
+
+        if user.in_network
+          # User is in the network, but has not yet had timeline above
+          models.User.findOneAndUpdate
+            twitter_id: user.twitter_id
+          ,
+            timeline: timeline
+            has_timeline: true
+            languages: languages
+            has_languages: true
+          , (err) ->
+            if err
+              console.error "getLanguages 6 error: #{ user.twitter_id }: #{ err }"
+            else
+              count++
+            cb null
+        else
+          models.User.findOneAndUpdate
+            twitter_id: user.twitter_id
+          ,
+            languages: languages
+            has_languages: true
+          , (err) ->
+            if err
+              console.error "getLanguages 7 error: #{ user.twitter_id }: #{ err }"
+            else
+              count++
+            cb null
 
     , (err) ->
       cb null, count
@@ -385,8 +486,16 @@ models.once 'ready', ->
       else
         _.delay doGetTimeline, 10000
 
+  doGetLanguages = ->
+    getLanguages (err, count) ->
+      if count > 0
+        doGetLanguages()
+      else
+        _.delay doGetLanguages, 10000
+
   doMarkInNetwork()
   doPopulateUsers()
   doFindFriends()
   doFindFollowers()
   doGetTimeline()
+  doGetLanguages()
