@@ -60,6 +60,22 @@ userSchema = mongoose.Schema
     index: true
     required: false
     default: false
+  user_mentions:
+    type: mongoose.Schema.Types.Mixed
+    required: false
+  has_user_mentions:
+    type: Boolean
+    index: true
+    required: false
+    default: false
+  retweets:
+    type: mongoose.Schema.Types.Mixed
+    required: false
+  has_retweets:
+    type: Boolean
+    index: true
+    required: false
+    default: false
   in_network:
     type: Boolean
     index: true

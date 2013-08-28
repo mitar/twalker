@@ -285,10 +285,16 @@ populateUsers = (cb) ->
 processTimeline = (timeline) ->
   _.map timeline, (value, key, list) ->
     # retweet_count seems to be a commulative count of all retweets globally, while favorite_count just for this particular tweet
-    value = _.pick value, 'created_at', 'id_str', 'text', 'retweeted_status', 'retweet_count', 'favorite_count', 'lang', 'coordinates'
+    value = _.pick value, 'created_at', 'id_str', 'text', 'retweeted_status', 'retweet_count', 'favorite_count', 'lang', 'coordinates', 'entities'
     if value.retweeted_status
       value.is_retweet_of = value.retweeted_status.id_str
+      value.is_retweet_from = value.retweeted_status.user.id_str
       delete value.retweeted_status
+    if value.entities?.user_mentions
+      value.entities.user_mentions = _.map value.entities.user_mentions, (user, i, l) ->
+        _.pick user, 'screen_name', 'id_str'
+    else if value.entities
+      delete value.entities
     value
 
 getTimeline = (cb) ->
