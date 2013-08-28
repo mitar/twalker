@@ -94,6 +94,8 @@ userSchema = mongoose.Schema
 
 userSchema.index 'deleted': 1, 'has_data': 1
 userSchema.index 'in_network': 1, 'deleted': 1, 'has_data': 1
+userSchema.index 'has_timeline': 1, 'in_network': 1, 'deleted': 1, 'private': 1
+userSchema.index 'has_languages': 1, 'deleted': 1, 'private': 1, 'has_data': 1
 
 User = db.model 'User', userSchema
 
