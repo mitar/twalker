@@ -290,9 +290,10 @@ processTimeline = (timeline) ->
       value.is_retweet_of = value.retweeted_status.id_str
       value.is_retweet_from = value.retweeted_status.user.id_str
       delete value.retweeted_status
-    if value.entities?.user_mentions
-      value.entities.user_mentions = _.map value.entities.user_mentions, (user, i, l) ->
-        _.pick user, 'screen_name', 'id_str'
+    if value.entities?.user_mentions and value.entities.user_mentions.length
+      value.entities =
+        user_mentions: _.map value.entities.user_mentions, (user, i, l) ->
+          _.pick user, 'screen_name', 'id_str'
     else if value.entities
       delete value.entities
     value
