@@ -7,6 +7,9 @@ location = require './location'
 models = require './models'
 twitter = require './twitter'
 
+inNetworkTest = (user) ->
+  user.data.time_zone == 'Ljubljana' or location.REGEX.test(user.data.location) or false
+
 markInNetwork = (cb) ->
   count = 0
 
@@ -19,7 +22,7 @@ markInNetwork = (cb) ->
     cb null, 0
     return
   ).on('data', (user) ->
-    in_network = user.data.time_zone == 'Ljubljana' or location.REGEX.test(user.data.location) or false
+    in_network = inNetworkTest user
     models.User.findOneAndUpdate
       twitter_id: user.twitter_id
     ,
@@ -370,7 +373,7 @@ getLanguages = (cb) ->
     has_languages: {$ne: true}
     deleted: {$ne: true}
     private: {$ne: true}
-    has_data: true # Artificial requirement, but just to influence the order of fetching
+    has_data: true # For inNetworkTest to work
   ,
     null
   ,
@@ -426,11 +429,16 @@ getLanguages = (cb) ->
         timeline = processTimeline timeline
         languages = timelineToLanguages timeline
 
-        if user.in_network
+        # Temporary set languages for inNetworkTest
+        user.languages = languages
+
+        in_network = inNetworkTest user
+        if in_network
           # User is in the network, but has not yet had timeline above
           models.User.findOneAndUpdate
             twitter_id: user.twitter_id
           ,
+            in_network: in_network
             timeline: timeline
             has_timeline: true
             languages: languages
@@ -445,6 +453,7 @@ getLanguages = (cb) ->
           models.User.findOneAndUpdate
             twitter_id: user.twitter_id
           ,
+            in_network: in_network
             languages: languages
             has_languages: true
           , (err) ->
