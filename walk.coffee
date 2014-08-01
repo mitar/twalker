@@ -8,7 +8,9 @@ models = require './models'
 twitter = require './twitter'
 
 inNetworkTest = (user) ->
-  user.data.time_zone == 'Ljubljana' or location.REGEX.test(user.data.location) or false
+  # We get statuses count from languages because they were fetched at a different time than profile and data.statuses_count
+  count = _.reduce _.values(user.languages), ((memo, num) -> memo + num), 0
+  user.data.time_zone == 'Ljubljana' or location.REGEX.test(user.data.location) or (count > 5 and (user.languages?.sl or 0) / count > 0.2) or false
 
 markInNetwork = (cb) ->
   count = 0
@@ -17,6 +19,7 @@ markInNetwork = (cb) ->
     in_network: null
     deleted: {$ne: true}
     has_data: true
+    has_languages: true
   ).batchSize(10).stream().on('error', (err) ->
     console.error "markInNetwork 1 error: #{ err }"
     cb null, 0
